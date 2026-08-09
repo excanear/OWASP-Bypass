@@ -12,19 +12,24 @@ instance the user does not own or have explicit authorization to test.
 
 ## Scope
 
-- **Target: all 113 challenges** listed in the project's official
-  `data/static/challenges.yml` (fetched from `juice-shop/juice-shop` master branch
-  on 2026-08-09). This is the authoritative source of truth for challenge keys,
-  categories, and difficulty — not a hardcoded guess.
+- **Target: 110 challenges**, derived from the 113 listed in the project's
+  official `data/static/challenges.yml` (fetched from `juice-shop/juice-shop`
+  master branch on 2026-08-09), **minus 3 that require a real LLM behind the
+  in-app chatbot** (`chatbotPromptInjectionChallenge`,
+  `chatbotGreedyInjectionChallenge`, `systemPromptExtractionChallenge` —
+  confirmed via `routes/chat.ts`: these call an actual configured LLM API, which
+  the user explicitly excluded). `challenges.yml` is the authoritative source of
+  truth for challenge keys, categories, and difficulty — not a hardcoded guess.
 - The instance must run via `npm start` (Node.js directly), **not Docker** — 17 of
   the 113 challenges declare `disabledEnv: [Docker, Heroku]` and are unreachable
   under Docker.
-- Category breakdown (from the official list):
+- Category breakdown (from the official list, Injection adjusted for the 3
+  excluded LLM-dependent challenges):
 
   | Category | Count |
   |---|---|
   | Sensitive Data Exposure | 16 |
-  | Injection | 14 |
+  | Injection | 11 (14 − 3 LLM-dependent, excluded) |
   | Improper Input Validation | 12 |
   | Broken Access Control | 12 |
   | XSS | 9 |
@@ -39,7 +44,7 @@ instance the user does not own or have explicit authorization to test.
   | Insecure Deserialization | 3 |
   | Unvalidated Redirects | 2 |
   | XXE | 2 |
-  | **Total** | **113** |
+  | **Total** | **110** |
 
 - 13 of the 113 challenges are also tagged `tutorial:` in the source data — these
   are **not a separate category**, they're a subset already counted within their
@@ -58,6 +63,9 @@ instance the user does not own or have explicit authorization to test.
   authorization (this is a local personal-training tool).
 - No AI-based or generative solving of coding challenges — answers are a static
   lookup table maintained alongside the solver code.
+- The 3 chatbot/LLM-dependent Injection challenges are explicitly out of scope
+  (see Scope) — they require a real LLM API key configured behind the Juice
+  Shop chatbot feature, not something this tool drives.
 
 ## Architecture
 
@@ -128,16 +136,18 @@ juice-shop-automator/
 
 ## Delivery plan (incremental, this engagement)
 
-1. Framework (setup, core/, base.py, runner, report) + **Injection + XSS + Broken
-   Authentication** (32 challenges)
+1. Framework (setup, core/, base.py, runner, report) + **Injection (11, LLM-dependent
+   3 excluded) + XSS (8 of 9 — `videoXssChallenge` deferred to phase 3, it depends
+   on the Arbitrary File Write exploit) + Broken Authentication (9)** (28 challenges)
 2. **Sensitive Data Exposure + Broken Access Control** (28 challenges)
-3. **Improper Input Validation + Vulnerable Components** (20 challenges)
+3. **Improper Input Validation + Vulnerable Components (incl. Arbitrary File Write)
+   + `videoXssChallenge`** (21 challenges)
 4. **Cryptographic Issues + Security Misconfiguration + Observability Failures +
    Miscellaneous** (19 challenges)
 5. Remaining categories: **Broken Anti Automation, Security through Obscurity,
    Insecure Deserialization, Unvalidated Redirects, XXE** (14 challenges)
 
-32 + 28 + 20 + 19 + 14 = 113. The 13 tutorial-tagged Find-it/Fix-it steps are
+28 + 28 + 21 + 19 + 14 = 110. The 13 tutorial-tagged Find-it/Fix-it steps are
 folded into whichever phase already covers their category — they add work to
 existing solvers, not new phases or new counts.
 
