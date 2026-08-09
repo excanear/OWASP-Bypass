@@ -6,7 +6,6 @@ routes/updateUserProfile.ts, routes/profileImageUrlUpload.ts, server.ts, and
 config/default.yml (fetched 2026-08-09)."""
 import uuid
 
-from core.client import JuiceShopClient
 from solvers.base import SolverContext, register
 
 DOMAIN = "juice-sh.op"
