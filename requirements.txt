@@ -1,0 +1,4 @@
+requests>=2.31
+python-socketio[client]>=5.11
+pyotp>=2.9
+pyyaml>=6.0
