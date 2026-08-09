@@ -23,6 +23,14 @@ try:
     import solvers.broken_access_control  # noqa: F401
 except ImportError:
     pass
+try:
+    import solvers.improper_input_validation  # noqa: F401
+except ImportError:
+    pass
+try:
+    import solvers.vulnerable_components  # noqa: F401
+except ImportError:
+    pass
 
 from core.runner import run_all
 from report import print_report
