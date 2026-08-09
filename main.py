@@ -15,6 +15,14 @@ try:
     import solvers.broken_auth  # noqa: F401
 except ImportError:
     pass
+try:
+    import solvers.sensitive_data  # noqa: F401
+except ImportError:
+    pass
+try:
+    import solvers.broken_access_control  # noqa: F401
+except ImportError:
+    pass
 
 from core.runner import run_all
 from report import print_report
