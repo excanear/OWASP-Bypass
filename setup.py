@@ -28,7 +28,9 @@ def npm_install(target_dir: str) -> None:
 
 
 def start_server(target_dir: str) -> subprocess.Popen:
-    return subprocess.Popen(["npm", "start"], cwd=target_dir)
+    env = os.environ.copy()
+    env["NODE_CONFIG"] = '{"challenges":{"safetyMode":"disabled"}}'
+    return subprocess.Popen(["npm", "start"], cwd=target_dir, env=env)
 
 
 def wait_ready(base_url: str = "http://localhost:3000", timeout: float = 180.0) -> None:
