@@ -23,11 +23,20 @@ def run_all(base_url: str = "http://localhost:3000", categories: list[str] | Non
         except Exception as exc:  # noqa: BLE001 - isolate one solver's failure from the rest
             error = f"{type(exc).__name__}: {exc}"
         duration = round(time.time() - start, 2)
-        try:
-            solved = is_solved(client, solver.key)
-        except Exception as exc:  # noqa: BLE001
-            solved = False
-            error = error or f"{type(exc).__name__}: {exc}"
+        # Juice Shop flips a challenge's solved flag from within async
+        # continuations of the request handler (sometimes after the
+        # response we already received), so an immediate check can race
+        # a solve that lands a moment later. Poll briefly before giving up.
+        solved = False
+        for attempt in range(5):
+            try:
+                solved = is_solved(client, solver.key)
+            except Exception as exc:  # noqa: BLE001
+                error = error or f"{type(exc).__name__}: {exc}"
+                break
+            if solved:
+                break
+            time.sleep(0.3)
         results.append({
             "key": solver.key,
             "category": solver.category,
