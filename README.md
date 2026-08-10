@@ -1,87 +1,105 @@
-# OWASP Bypass
+<div align="center">
 
-**An autonomous exploit runner for [OWASP Juice Shop](https://github.com/juice-shop/juice-shop) — 107 registered exploits, live-verified against a real running instance, zero mocking.**
+# 🛡️ OWASP Bypass
 
-> Juice Shop is the intentionally-vulnerable training application maintained by OWASP. This tool drives a local instance of it end-to-end: registers accounts, forges tokens, races the server, smuggles payloads, and confirms every single win against the app's own scoreboard API. Nothing here is simulated — if a solver reports success, Juice Shop itself has already marked that challenge solved.
+### Motor autônomo de exploits para o [OWASP Juice Shop](https://github.com/juice-shop/juice-shop)
+
+**107 exploits registrados · verificação ao vivo contra o scoreboard real · zero mocking**
+
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Node.js](https://img.shields.io/badge/node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Juice Shop](https://img.shields.io/badge/juice--shop-20.1.1-FF6B00?style=for-the-badge&logo=owasp&logoColor=white)](https://github.com/juice-shop/juice-shop)
+[![Resultado](https://img.shields.io/badge/desafios-106%2F107-brightgreen?style=for-the-badge)](#-resultados)
+
+<br>
 
 ```
-TOTAL: 106/107 solved
+╭──────────────────────────────────────────────╮
+│                                                │
+│   TOTAL: 106/107 desafios resolvidos          │
+│                                                │
+╰──────────────────────────────────────────────╯
 ```
 
----
+</div>
 
-## Table of Contents
+<br>
 
-- [What this is](#what-this-is)
-- [Results](#results)
-- [Quickstart](#quickstart)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-- [How it works](#how-it-works)
-- [Project layout](#project-layout)
-- [Writing a new solver](#writing-a-new-solver)
-- [Testing philosophy](#testing-philosophy)
-- [Notable exploit techniques](#notable-exploit-techniques)
-- [Deferred challenges](#deferred-challenges)
-- [Design docs](#design-docs)
-- [Responsible use](#responsible-use)
+> [!NOTE]
+> O Juice Shop é a aplicação **intencionalmente vulnerável** mantida pela própria OWASP para treinamento de segurança. Esta ferramenta pilota uma instância local dele de ponta a ponta — registra contas, forja tokens, corre contra o servidor em condições de corrida, contrabandeia payloads — e confirma cada vitória consultando o **scoreboard real da aplicação** (`/api/Challenges/`). Nada aqui é simulado: se um solver reporta sucesso, é porque o próprio Juice Shop já marcou aquele desafio como resolvido.
 
----
+<br>
 
-## What this is
+## 📑 Sumário
 
-OWASP Bypass is a Python CLI that automatically **solves** OWASP Juice Shop's built-in
-security challenges — SQL/NoSQL injection, XSS, JWT forgery, IDOR, SSRF, XXE,
-zip-slip file writes, race conditions, and more — by driving the application's
-real HTTP/WebSocket API exactly the way a human attacker would, then confirming
-every solve against Juice Shop's own live scoreboard (`/api/Challenges/`), never
-by trusting a script's own "it probably worked."
+<table>
+<tr><td width="50%" valign="top">
 
-Every one of the 107 registered solvers was built the same way:
+- [🎯 O que é isto](#-o-que-é-isto)
+- [📊 Resultados](#-resultados)
+- [🚀 Início rápido](#-início-rápido)
+- [📋 Requisitos](#-requisitos)
+- [⚙️ Instalação](#️-instalação)
+- [🖥️ Uso](#️-uso)
 
-1. **Read the real Juice Shop TypeScript source** for the exact vulnerable code
-   path (never guessed).
-2. **Craft the payload from that source** — a specific SQL comment, a forged JWT,
-   a zip-slip path, a race-condition timing window.
-3. **Run it against a live local instance** and watch the scoreboard flip.
-4. **If it didn't flip, read the source again** — never weaken the check to
-   accept a false positive.
+</td><td width="50%" valign="top">
 
-The result is a corpus of small, single-purpose, heavily-commented exploit
-functions that double as a **working, live-verified writeup for nearly every
-challenge in Juice Shop** — useful as a learning reference even if you never run
-the CLI.
+- [🧠 Como funciona](#-como-funciona)
+- [📁 Estrutura do projeto](#-estrutura-do-projeto)
+- [🧩 Criando um novo solver](#-criando-um-novo-solver)
+- [🧪 Filosofia de testes](#-filosofia-de-testes)
+- [🎓 Técnicas em destaque](#-técnicas-em-destaque)
+- [🚫 Desafios adiados](#-desafios-adiados) · [⚖️ Uso responsável](#️-uso-responsável)
 
-## Results
+</td></tr>
+</table>
 
-| Category | Solved | Notes |
-|---|---:|---|
-| Sensitive Data Exposure | 16/16 | |
-| Injection | 11/11 | SQLi, NoSQLi, SSTI |
-| Improper Input Validation | 11/11 | |
-| Broken Access Control | 11/11 | |
-| XSS | 9/9 | incl. video-subtitle XSS via zip-slip |
-| Broken Authentication | 9/9 | |
-| Vulnerable Components | 8/8 | zip-slip RCE-class write, JWT forgery |
-| Miscellaneous | 5/5 | |
-| Cryptographic Issues | 5/5 | Z85 coupon forgery, Hashids continue-code |
-| Security Misconfiguration | 4/4 | |
-| Observability Failures | 4/4 | |
-| Broken Anti Automation | 4/4 | incl. a real TOCTOU race condition |
-| Security through Obscurity | 3/3 | |
-| Insecure Deserialization | 3/3 | sandboxed-JS timing race (RCE + DoS pair) |
-| XXE | 1/2 | see [Deferred challenges](#deferred-challenges) |
-| Unvalidated Redirects | 2/2 | |
-| **Total** | **106/107** | **110 in scope; 3 excluded up front, 1 environment-blocked** |
+<br>
 
-Reproduce this number yourself:
+## 🎯 O que é isto
 
-```bash
-python main.py --setup
-```
+**OWASP Bypass** é uma CLI em Python que **resolve automaticamente** os desafios de segurança embutidos no OWASP Juice Shop — SQL/NoSQL injection, XSS, forja de JWT, IDOR, SSRF, XXE, escrita arbitrária de arquivo via zip-slip, condições de corrida e muito mais — pilotando a API HTTP/WebSocket real da aplicação exatamente como um atacante humano faria, e confirmando cada solução contra o **scoreboard ao vivo** do próprio Juice Shop. Nunca confiando no "provavelmente funcionou" do script.
 
-## Quickstart
+Cada um dos 107 solvers registrados foi construído da mesma forma, sem exceção:
+
+<table>
+<tr><td width="8%" align="center"><b>1</b></td><td>Ler o <b>código-fonte TypeScript real</b> do Juice Shop para encontrar o caminho vulnerável exato — nunca chutado.</td></tr>
+<tr><td align="center"><b>2</b></td><td>Construir o payload <b>a partir desse código-fonte</b> — um comentário SQL específico, um JWT forjado, um caminho de zip-slip, uma janela de timing para condição de corrida.</td></tr>
+<tr><td align="center"><b>3</b></td><td>Rodar contra uma <b>instância local ao vivo</b> e observar o scoreboard virar.</td></tr>
+<tr><td align="center"><b>4</b></td><td>Se não virou, <b>ler o código-fonte de novo</b> — nunca afrouxar a verificação para aceitar um falso positivo.</td></tr>
+</table>
+
+O resultado é um corpus de funções de exploit pequenas, de responsabilidade única e fartamente comentadas, que funcionam também como um **writeup vivo e verificado** de quase todos os desafios do Juice Shop — útil como referência de estudo mesmo que você nunca rode a CLI.
+
+<br>
+
+## 📊 Resultados
+
+| Categoria | Resolvidos | Destaques |
+|:--|:--:|:--|
+| Sensitive Data Exposure | `16/16` | |
+| Injection | `11/11` | SQLi, NoSQLi, SSTI |
+| Improper Input Validation | `11/11` | |
+| Broken Access Control | `11/11` | |
+| XSS | `9/9` | inclui XSS na legenda do vídeo via zip-slip |
+| Broken Authentication | `9/9` | |
+| Vulnerable Components | `8/8` | escrita arbitrária de arquivo, forja de JWT |
+| Miscellaneous | `5/5` | |
+| Cryptographic Issues | `5/5` | forja de cupom Z85, continue-code Hashids |
+| Security Misconfiguration | `4/4` | |
+| Observability Failures | `4/4` | |
+| Broken Anti Automation | `4/4` | inclui uma condição de corrida (TOCTOU) real |
+| Security through Obscurity | `3/3` | |
+| Insecure Deserialization | `3/3` | par RCE/DoS por timing em interpretador JS isolado |
+| XXE | `1/2` | ver [Desafios adiados](#-desafios-adiados) |
+| Unvalidated Redirects | `2/2` | |
+| **Total** | **`106/107`** | **110 no escopo · 3 excluídos de saída · 1 bloqueado pelo ambiente** |
+
+<sub>Reproduza este número você mesmo: `python main.py --setup`</sub>
+
+<br>
+
+## 🚀 Início rápido
 
 ```bash
 git clone https://github.com/excanear/OWASP-Bypass.git
@@ -90,81 +108,73 @@ pip install -r requirements.txt
 python main.py --setup
 ```
 
-`--setup` clones Juice Shop into `./juice-shop`, runs `npm install`, starts it
-with `npm start`, waits for it to come up, then runs every solver and prints a
-category-grouped report. First run takes a few minutes (Node install + Angular
-build); every run after that is fast.
+`--setup` clona o Juice Shop em `./juice-shop`, roda `npm install`, sobe o servidor com `npm start`, espera ele ficar pronto e então executa todos os solvers, imprimindo um relatório agrupado por categoria. A primeira execução leva alguns minutos (instalação do Node + build do Angular); as seguintes são rápidas.
 
-## Requirements
+<br>
 
-- **Python 3.11+**
-- **Node.js 18+** and npm (only needed if you use `--setup` to provision Juice
-  Shop yourself — point `--base-url` at an instance you already have running
-  and skip this entirely)
-- **A Juice Shop instance started via `npm start`, not Docker.** 17 of Juice
-  Shop's challenges declare `disabledEnv: [Docker, Heroku]` and are simply
-  unreachable in a container. This project always targets a directly-run
-  instance.
-- Tested on **Windows** (git-bash/PowerShell) against Juice Shop `20.1.1`. The
-  solvers are pure HTTP/WebSocket and have no Windows-specific dependency
-  except one payload path (`xxeFileDisclosureChallenge` reads
-  `C:\Windows\win.ini` instead of `/etc/passwd` — see below).
+## 📋 Requisitos
 
-## Installation
+| | |
+|:--|:--|
+| 🐍 **Python** | 3.11 ou superior |
+| 🟢 **Node.js** | 18+ e npm — só necessário se usar `--setup` para provisionar o Juice Shop você mesmo (aponte `--base-url` para uma instância que já esteja rodando e pule isso completamente) |
+| 🎯 **Instância do Juice Shop** | iniciada via `npm start`, **nunca via Docker** — 17 desafios declaram `disabledEnv: [Docker, Heroku]` e são simplesmente inalcançáveis em container |
+| 🪟 **Testado em** | Windows (git-bash/PowerShell) contra Juice Shop `20.1.1`. Os solvers são HTTP/WebSocket puro e não têm dependência específica de Windows, exceto um payload (`xxeFileDisclosureChallenge` lê `C:\Windows\win.ini` em vez de `/etc/passwd`) |
+
+<br>
+
+## ⚙️ Instalação
 
 ```bash
 pip install -r requirements.txt
 ```
 
-No system-level dependencies beyond Python — the Z85 and Hashids encoding
-schemes used by two solvers are implemented directly in this repo rather than
-pulled in as extra packages (see [Notable exploit techniques](#notable-exploit-techniques)).
+Nenhuma dependência de sistema além do Python — os esquemas de codificação Z85 e Hashids usados por dois solvers são implementados diretamente neste repositório em vez de importados como pacotes extras (veja [Técnicas em destaque](#-técnicas-em-destaque)).
 
-If you'd rather provision Juice Shop by hand:
+Se preferir provisionar o Juice Shop manualmente:
 
 ```bash
 git clone --depth 1 https://github.com/juice-shop/juice-shop.git
 cd juice-shop && npm install && npm start
 ```
 
-One category needs a specific server flag to be reachable at all —
-`jwtForgedChallenge` is disabled by default on Windows unless Juice Shop's
-safety mode is turned off:
+> [!IMPORTANT]
+> Uma categoria só fica alcançável com uma flag específica no servidor — `jwtForgedChallenge` vem desabilitado por padrão no Windows a menos que o modo de segurança do Juice Shop seja desligado:
+> ```bash
+> NODE_CONFIG='{"challenges":{"safetyMode":"disabled"}}' npm start
+> ```
+> `python main.py --setup` já faz isso por você.
+
+<br>
+
+## 🖥️ Uso
 
 ```bash
-NODE_CONFIG='{"challenges":{"safetyMode":"disabled"}}' npm start
-```
-
-(`python main.py --setup` already does this for you.)
-
-## Usage
-
-```bash
-# Full run: provision Juice Shop, then solve everything
+# Execução completa: provisiona o Juice Shop e resolve tudo
 python main.py --setup
 
-# Run against an instance you already have up
+# Rodar contra uma instância que você já tem no ar
 python main.py --base-url http://localhost:3000
 
-# Run only specific categories (repeatable)
+# Rodar apenas categorias específicas (repetível)
 python main.py --category Injection --category XSS
 
-# Just print the current live scoreboard without running any solver
+# Apenas conferir o scoreboard ao vivo, sem rodar nenhum solver
 pytest tests/test_framework.py -v
 ```
 
-### CLI reference
+### Referência da CLI
 
-| Flag | Description |
-|---|---|
-| `--setup` | Clone/install/start a local Juice Shop before running solvers |
-| `--base-url URL` | Target instance (default `http://localhost:3000`) |
-| `--category NAME` | Limit the run to one category; repeat the flag for several |
+| Flag | Descrição |
+|:--|:--|
+| `--setup` | Clona/instala/inicia um Juice Shop local antes de rodar os solvers |
+| `--base-url URL` | Instância alvo (padrão `http://localhost:3000`) |
+| `--category NOME` | Restringe a execução a uma categoria; repita a flag para várias |
 
-The process exits `1` if any attempted challenge is left unsolved, so
-`python main.py` is CI-friendly.
+O processo sai com código `1` se algum desafio tentado ficar sem solução — ou seja, `python main.py` é amigável para pipelines de CI.
 
-### Sample output
+<details>
+<summary><b>📄 Ver exemplo de saída</b></summary>
 
 ```
 Injection (11/11)
@@ -185,26 +195,30 @@ XXE (1/2)
 TOTAL: 106/107 solved
 ```
 
-## How it works
+</details>
+
+<br>
+
+## 🧠 Como funciona
 
 ```
-┌──────────────┐   register()   ┌──────────────────┐
-│ solvers/*.py │ ─────────────► │  solver registry  │
-└──────────────┘                └────────┬──────────┘
-                                          │ all_solvers()
-                                          ▼
-┌──────────────┐   HTTP/WS      ┌──────────────────┐   /api/Challenges/   ┌───────────────┐
-│ JuiceShop    │ ◄───────────── │  core/runner.py   │ ───────────────────► │  live Juice   │
-│ Client       │ ─────────────► │     run_all()      │ ◄─────────────────── │  Shop server  │
-└──────────────┘   solve(ctx)   └────────┬──────────┘   solved: true/false  └───────────────┘
-                                          ▼
-                                  ┌──────────────────┐
-                                  │   report.py       │
-                                  │  category summary  │
-                                  └──────────────────┘
+┌───────────────┐   register()   ┌────────────────────┐
+│  solvers/*.py │ ─────────────► │  registro global    │
+└───────────────┘                └──────────┬──────────┘
+                                             │ all_solvers()
+                                             ▼
+┌───────────────┐   HTTP/WS      ┌────────────────────┐   /api/Challenges/   ┌────────────────┐
+│ JuiceShop     │ ◄───────────── │  core/runner.py     │ ────────────────────► │  servidor real  │
+│ Client        │ ─────────────► │      run_all()       │ ◄──────────────────── │  Juice Shop     │
+└───────────────┘   solve(ctx)   └──────────┬──────────┘   solved: true/false  └────────────────┘
+                                             ▼
+                                    ┌────────────────────┐
+                                    │    report.py         │
+                                    │  resumo por categoria │
+                                    └────────────────────┘
 ```
 
-**Every solver is a plain function**, registered with a decorator:
+Cada solver é uma **função simples**, registrada com um decorator:
 
 ```python
 @register("loginAdminChallenge", "Injection", 2)
@@ -212,181 +226,163 @@ def solve_login_admin(ctx: SolverContext) -> None:
     ctx.client.login("admin@juice-sh.op'--", "irrelevant")
 ```
 
-`core/runner.run_all()` gives each solver a **fresh `JuiceShopClient`** (its own
-cookie jar and auth token — no state leaks between challenges), calls it,
-catches whatever it throws, and then — regardless of whether the solver itself
-raised — **re-queries Juice Shop's own `/api/Challenges/` endpoint** to see if
-the flag actually flipped. That live re-check, not the solver's return value or
-lack of an exception, is the only thing that counts as "solved." A solver that
-returns cleanly but didn't actually trip the server-side check is reported as
-failed; a solver that throws an exception *after* the server already recorded
-the solve is still reported as solved. This is the one architectural rule the
-whole project holds to strictly, because Juice Shop occasionally flips a
-challenge's flag from an async continuation that lands a beat after the HTTP
-response you already received — `run_all` polls briefly (up to five times,
-300ms apart) to absorb that race rather than reporting a false failure.
+`core/runner.run_all()` entrega a cada solver um **`JuiceShopClient` novo em folha** (cookie jar e token de autenticação próprios — nenhum estado vaza entre desafios), executa a função, captura o que ela lançar e, **independentemente de ter havido exceção**, reconsulta o endpoint real `/api/Challenges/` para verificar se a flag realmente virou. É essa reconsulta ao vivo — e não o retorno do solver nem a ausência de exceção — a única coisa que conta como "resolvido". Um solver que retorna normalmente mas não disparou a verificação do lado servidor é reportado como falho; um solver que lança exceção *depois* de o servidor já ter registrado a solução ainda é reportado como resolvido.
 
-## Project layout
+Essa é a única regra arquitetural que o projeto inteiro segue à risca: o Juice Shop, às vezes, vira a flag de um desafio dentro de uma continuação assíncrona que chega um instante depois da resposta HTTP que você já recebeu — por isso `run_all` faz um polling curto (até 5 tentativas, 300ms entre elas) para absorver essa corrida em vez de reportar um falso negativo.
+
+<br>
+
+## 📁 Estrutura do projeto
+
+<details open>
+<summary><b>Ver árvore completa</b></summary>
 
 ```
-main.py                     CLI entrypoint — wires every solver module, runs, reports
-setup.py                    clone/install/start Juice Shop for you
-report.py                   category-grouped console report
+main.py                     ponto de entrada da CLI — importa todos os solvers, executa, reporta
+setup.py                    clona/instala/inicia o Juice Shop para você
+report.py                   relatório no console, agrupado por categoria
 
 core/
-  client.py                 JuiceShopClient — thin requests.Session wrapper (login, register, verbs)
-  runner.py                 run_all() — the live-verification loop described above
-  challenge_api.py          reads the real /api/Challenges/ scoreboard
+  client.py                 JuiceShopClient — wrapper fino sobre requests.Session (login, registro, verbos)
+  runner.py                 run_all() — o loop de verificação ao vivo descrito acima
+  challenge_api.py          lê o scoreboard real em /api/Challenges/
 
 solvers/
-  base.py                   the @register decorator + solver registry
-  injection.py               11 solvers — SQLi, NoSQLi, SSTI
-  xss.py                     9 solvers  — reflected/persisted/DOM XSS, WebSocket-triggered
-  broken_auth.py             9 solvers  — weak passwords, 2FA secret leak, reset-password answers
-  sensitive_data.py         16 solvers  — IDOR, JWT/coupon leaks, geo-stalking metadata
-  broken_access_control.py  11 solvers  — CSRF, SSRF, basket/review tampering
-  improper_input_validation.py 11 solvers
-  vulnerable_components.py   9 solvers  — zip-slip file write, unsigned/forged JWT
-  cryptographic_issues.py    5 solvers  — Z85 coupon forgery, Hashids continue-code
-  security_misconfiguration.py 4 solvers
-  observability_failures.py  4 solvers
-  miscellaneous.py           5 solvers
-  broken_anti_automation.py  4 solvers  — CAPTCHA bypass, a real TOCTOU race
-  security_through_obscurity.py 3 solvers
-  insecure_deserialization.py 3 solvers — sandboxed-JS RCE/DoS timing pair, YAML bomb
-  unvalidated_redirects.py   2 solvers  — allowlist substring-vs-prefix bypass
-  xxe.py                     2 solvers  — external entity file read, entity-expansion DoS
+  base.py                        o decorator @register + o registro de solvers
+  injection.py                    11 solvers — SQLi, NoSQLi, SSTI
+  xss.py                           9 solvers — XSS refletido/persistido/DOM, disparado via WebSocket
+  broken_auth.py                   9 solvers — senhas fracas, vazamento de segredo 2FA, respostas de recuperação
+  sensitive_data.py               16 solvers — IDOR, vazamento de JWT/cupom, metadados de geolocalização
+  broken_access_control.py        11 solvers — CSRF, SSRF, adulteração de carrinho/avaliação
+  improper_input_validation.py    11 solvers
+  vulnerable_components.py         9 solvers — escrita de arquivo via zip-slip, JWT não assinado/forjado
+  cryptographic_issues.py          5 solvers — forja de cupom Z85, continue-code Hashids
+  security_misconfiguration.py     4 solvers
+  observability_failures.py        4 solvers
+  miscellaneous.py                 5 solvers
+  broken_anti_automation.py        4 solvers — bypass de CAPTCHA, uma condição de corrida real
+  security_through_obscurity.py    3 solvers
+  insecure_deserialization.py      3 solvers — par RCE/DoS por timing, bomba YAML
+  unvalidated_redirects.py         2 solvers — bypass de allowlist por substring vs. prefixo
+  xxe.py                           2 solvers — leitura de arquivo via entidade externa, DoS por expansão
 
 tests/
-  test_framework.py          smoke tests for the framework itself
-  test_<category>_live.py    one live-verification suite per category, no mocking, ever
+  test_framework.py          smoke tests do próprio framework
+  test_<categoria>_live.py   uma suíte de verificação ao vivo por categoria, sem mocking, jamais
 
 docs/superpowers/
-  specs/                     original scope/design document
-  plans/                     the 5 phase-by-phase implementation plans this project was built from
+  specs/                     documento original de escopo e arquitetura
+  plans/                     os 5 planos de implementação, fase a fase, que originaram este projeto
 ```
 
-## Writing a new solver
+</details>
 
-Every solver follows the same three-line shape:
+<br>
+
+## 🧩 Criando um novo solver
+
+Todo solver segue a mesma forma de três linhas:
 
 ```python
-# solvers/my_category.py
+# solvers/minha_categoria.py
 from solvers.base import SolverContext, register
 
-@register("someChallengeKey", "Category Name", difficulty=3)
-def solve_something(ctx: SolverContext) -> None:
-    ctx.client.post("/some/endpoint", json={"payload": "..."})
+@register("algumaChaveDoDesafio", "Nome da Categoria", difficulty=3)
+def solve_alguma_coisa(ctx: SolverContext) -> None:
+    ctx.client.post("/algum/endpoint", json={"payload": "..."})
 ```
 
-- `ctx.client` is a `JuiceShopClient` — `.get/.post/.put/.patch(path, **kwargs)`
-  wrap `requests` directly, plus `.register(email, password)` and
-  `.login(email, password)` helpers that manage the auth cookie/header for you.
-- You never call the scoreboard yourself — `run_all()` does that after your
-  function returns (or raises).
-- Register the module's import in `main.py` (`try: import solvers.my_category`)
-  so it gets picked up.
-- Add a `tests/test_my_category_live.py` following the existing pattern —
-  live HTTP against a real instance, asserting every key in your category
-  shows `solved: true`.
+- `ctx.client` é um `JuiceShopClient` — `.get/.post/.put/.patch(path, **kwargs)` encapsulam o `requests` diretamente, além dos helpers `.register(email, senha)` e `.login(email, senha)`, que já cuidam do cookie/header de autenticação.
+- Você nunca consulta o scoreboard manualmente — `run_all()` faz isso depois que sua função retorna (ou lança exceção).
+- Registre o import do módulo em `main.py` (`try: import solvers.minha_categoria`) para que ele seja carregado.
+- Adicione um `tests/test_minha_categoria_live.py` seguindo o padrão existente — HTTP real contra uma instância real, verificando que cada chave da sua categoria aparece como `solved: true`.
 
-## Testing philosophy
+<br>
 
-**No mocking, anywhere, ever.** Every test in `tests/` runs the real solvers
-against a real running Juice Shop instance and asserts against the real
-scoreboard. This is deliberate: a mocked test can pass while the actual
-exploit is broken, which for a security tool is worse than no test at all.
+## 🧪 Filosofia de testes
+
+> [!TIP]
+> **Sem mocking. Em lugar nenhum. Nunca.** Todo teste em `tests/` roda os solvers de verdade contra uma instância real do Juice Shop e verifica contra o scoreboard real. Isso é deliberado: um teste mockado pode passar enquanto o exploit de verdade está quebrado — o que, para uma ferramenta de segurança, é pior do que não ter teste nenhum.
 
 ```bash
 pytest tests/ -v
 ```
 
-Every `test_*_live.py` skips cleanly (not fails) when no instance is
-reachable at `http://localhost:3000`, so the suite is safe to run without
-Juice Shop up — it just reports 0 collected assertions for the live files.
+Cada `test_*_live.py` faz *skip* (não falha) quando nenhuma instância está acessível em `http://localhost:3000`, então a suíte é segura de rodar mesmo sem o Juice Shop no ar — ela só reporta zero asserções coletadas nos arquivos ao vivo.
 
-## Notable exploit techniques
+<br>
 
-A few solvers that are more than a one-line payload:
+## 🎓 Técnicas em destaque
 
-- **[`vulnerable_components.py`](solvers/vulnerable_components.py) — zip-slip arbitrary file write.**
-  A crafted `.zip` upload with entry names like `../../ftp/legal.md` escapes
-  the intended `uploads/complaints/` directory. The same technique overwrites
-  the promo video's subtitle track with an XSS payload, solving a second,
-  unrelated *XSS* challenge as a side effect.
-- **[`vulnerable_components.py`](solvers/vulnerable_components.py) — RS256→HS256 JWT key confusion.**
-  Fetches the server's own RSA **public** key from its public endpoint, then
-  signs a forged token with **HS256**, using the public key's raw bytes as the
-  HMAC secret — a classic algorithm-confusion attack against JWT libraries that
-  don't pin the expected algorithm. (Note: modern PyJWT actively blocks this at
-  the library level as a defense-in-depth measure, so this solver hand-rolls
-  the HMAC construction with the standard library instead of `pyjwt.encode()`.)
-- **[`cryptographic_issues.py`](solvers/cryptographic_issues.py) — Z85 coupon forgery.**
-  Juice Shop encodes discount coupons with ZeroMQ's Z85 (RFC 32) scheme. This
-  repo hand-ports the exact ~15-line encoder from the real npm package's
-  source (verified byte-for-byte against the registry, not guessed) rather
-  than trust an unrelated same-named PyPI package.
-- **[`cryptographic_issues.py`](solvers/cryptographic_issues.py) — Hashids continue-code forgery.**
-  Reproduces Juice Shop's save-game "continue code" using the same
-  salt/alphabet/min-length as the server, deterministically, with no need to
-  ever have played the game.
-- **[`broken_anti_automation.py`](solvers/broken_anti_automation.py) — a genuine race condition.**
-  Fires eight concurrent "like this review" requests through
-  `concurrent.futures.ThreadPoolExecutor` to win a real TOCTOU window: the
-  server checks "have you already liked this?" before an artificial 150ms
-  delay and only records the like *after* it — enough concurrent requests slip
-  through the check before any of them commit.
-- **[`insecure_deserialization.py`](solvers/insecure_deserialization.py) — a matched DoS/RCE timing pair.**
-  Juice Shop evaluates untrusted JS in a sandboxed interpreter with two
-  independent limits: the interpreter's own 1,000,000-iteration loop guard,
-  and the host VM's 2-second wall-clock timeout. One solver uses a
-  featherweight `while(true){}` to trip the interpreter's own counter first;
-  the other nests a heavy loop inside so the *VM* timeout wins the race
-  instead — two opposite outcomes from the same vulnerable endpoint, on
-  purpose.
-- **[`unvalidated_redirects.py`](solvers/unvalidated_redirects.py) — allowlist substring vs. prefix bypass.**
-  The server's redirect allowlist check uses `.includes()` (substring
-  anywhere) while its "was this an intended redirect" check uses
-  `.startsWith()` (prefix only) — a URL that *contains* an allowed URL without
-  *starting with* it satisfies the first check and fails the second
-  simultaneously.
+Alguns solvers que vão bem além de um payload de uma linha:
 
-## Deferred challenges
+<table>
+<tr>
+<td width="30%"><b>📦 Zip-slip → escrita arbitrária de arquivo</b><br><sub><a href="solvers/vulnerable_components.py">vulnerable_components.py</a></sub></td>
+<td>Um upload <code>.zip</code> forjado com entradas como <code>../../ftp/legal.md</code> escapa do diretório pretendido <code>uploads/complaints/</code>. A mesma técnica sobrescreve a legenda do vídeo promocional com um payload de XSS, resolvendo de brinde um segundo desafio — de XSS — sem relação direta.</td>
+</tr>
+<tr>
+<td><b>🔑 Confusão de algoritmo JWT (RS256→HS256)</b><br><sub><a href="solvers/vulnerable_components.py">vulnerable_components.py</a></sub></td>
+<td>Busca a chave <b>pública</b> RSA do próprio servidor em seu endpoint público, depois assina um token forjado com <b>HS256</b>, usando os bytes brutos da chave pública como segredo HMAC — o clássico ataque de confusão de algoritmo contra bibliotecas JWT que não fixam o algoritmo esperado. (O PyJWT moderno bloqueia isso ativamente como defesa em profundidade, então este solver monta o HMAC manualmente com a biblioteca padrão em vez de <code>pyjwt.encode()</code>.)</td>
+</tr>
+<tr>
+<td><b>💳 Forja de cupom Z85</b><br><sub><a href="solvers/cryptographic_issues.py">cryptographic_issues.py</a></sub></td>
+<td>O Juice Shop codifica cupons de desconto com o esquema Z85 (RFC 32) do ZeroMQ. Este repositório porta manualmente o codificador de ~15 linhas direto do pacote npm real (verificado byte a byte contra o registry, nunca chutado) em vez de confiar em um pacote PyPI homônimo sem relação alguma.</td>
+</tr>
+<tr>
+<td><b>🎮 Forja de continue-code Hashids</b><br><sub><a href="solvers/cryptographic_issues.py">cryptographic_issues.py</a></sub></td>
+<td>Reproduz o "código de continuação" de save-game do Juice Shop usando o mesmo salt/alfabeto/tamanho mínimo do servidor, de forma determinística — sem nunca ter jogado.</td>
+</tr>
+<tr>
+<td><b>⚡ Condição de corrida real (TOCTOU)</b><br><sub><a href="solvers/broken_anti_automation.py">broken_anti_automation.py</a></sub></td>
+<td>Dispara oito requisições concorrentes de "curtir esta avaliação" via <code>concurrent.futures.ThreadPoolExecutor</code> para vencer uma janela TOCTOU real: o servidor verifica "você já curtiu isso?" antes de um atraso artificial de 150ms e só grava a curtida <i>depois</i> dele — requisições concorrentes o suficiente escapam da verificação antes que qualquer uma delas seja confirmada.</td>
+</tr>
+<tr>
+<td><b>💣 Par DoS/RCE por timing</b><br><sub><a href="solvers/insecure_deserialization.py">insecure_deserialization.py</a></sub></td>
+<td>O Juice Shop avalia JS não confiável num interpretador isolado com dois limites independentes: o contador de 1.000.000 de iterações do próprio interpretador, e o timeout de 2 segundos da VM hospedeira. Um solver usa um <code>while(true){}</code> leve o bastante para disparar primeiro o contador do interpretador; o outro aninha um loop pesado para que o timeout da <i>VM</i> vença a corrida — dois desfechos opostos do mesmo endpoint vulnerável, de propósito.</td>
+</tr>
+<tr>
+<td><b>🔀 Bypass de allowlist por substring vs. prefixo</b><br><sub><a href="solvers/unvalidated_redirects.py">unvalidated_redirects.py</a></sub></td>
+<td>A verificação de allowlist de redirecionamento do servidor usa <code>.includes()</code> (substring em qualquer posição), enquanto a verificação de "isso era um redirecionamento pretendido" usa <code>.startsWith()</code> (só prefixo) — uma URL que <i>contém</i> uma URL permitida sem <i>começar</i> com ela satisfaz a primeira verificação e falha a segunda ao mesmo tempo.</td>
+</tr>
+</table>
 
-107 of Juice Shop's 110 in-scope challenges are solved automatically. Four are
-permanently out of reach for this tool, each for the same reason: they require
-a real external service this environment doesn't have access to, or an
-un-patched dependency behavior this environment's exact library version
-doesn't exhibit. None are solvable by writing a different payload.
+<br>
 
-| Challenge | Category | Why it's excluded |
-|---|---|---|
-| `chatbotPromptInjectionChallenge`, `chatbotGreedyInjectionChallenge`, `systemPromptExtractionChallenge` | Injection | Require a real configured LLM behind Juice Shop's in-app chatbot |
-| `aiDebuggingChallenge` | Broken Access Control | Requires the chatbot to invoke a real LLM tool call |
-| `nftMintChallenge` | Improper Input Validation | Requires a funded Ethereum Sepolia testnet wallet + a paid Alchemy API key |
-| `web3WalletChallenge` | Miscellaneous | Same on-chain/Alchemy dependency as above |
-| `xxeDosChallenge` | XXE | A classic "billion laughs" entity-expansion bomb is rejected outright by libxml2's built-in `xmlCtxtSetMaxAmplification` entity-ratio guard, combined with Juice Shop's 200KB upload cap, on the libxml2-wasm version this checkout pins — the payload that would trigger the intended timeout never gets big enough to run long before being rejected in milliseconds. Verified across six independently-tuned payload variants; the solver is still registered and attempted, and is reported honestly as unsolved rather than removed. |
+## 🚫 Desafios adiados
 
-`xxeDosChallenge`'s solver stays in `solvers/xxe.py` on purpose — a genuine,
-documented attempt that fails is more useful than pretending the challenge
-doesn't exist.
+107 dos 110 desafios do Juice Shop no escopo são resolvidos automaticamente. Quatro permanecem permanentemente fora de alcance para esta ferramenta, todos pelo mesmo motivo raiz: exigem um serviço externo real que este ambiente não tem acesso, ou um comportamento de dependência não corrigido que a versão exata da biblioteca aqui não apresenta. Nenhum é resolvível trocando o payload.
 
-## Design docs
+| Desafio | Categoria | Por que está excluído |
+|:--|:--|:--|
+| `chatbotPromptInjectionChallenge`, `chatbotGreedyInjectionChallenge`, `systemPromptExtractionChallenge` | Injection | Exigem um LLM real configurado por trás do chatbot embutido no Juice Shop |
+| `aiDebuggingChallenge` | Broken Access Control | Exige que o chatbot invoque uma chamada de ferramenta via LLM real |
+| `nftMintChallenge` | Improper Input Validation | Exige uma carteira Ethereum real e financiada na testnet Sepolia + uma chave de API paga da Alchemy |
+| `web3WalletChallenge` | Miscellaneous | Mesma dependência on-chain/Alchemy acima |
+| `xxeDosChallenge` | XXE | Uma bomba clássica de expansão de entidades ("billion laughs") é rejeitada de imediato pelo guard `xmlCtxtSetMaxAmplification` do libxml2, combinado com o limite de 200KB de upload do Juice Shop, na versão do libxml2-wasm fixada neste checkout — o payload que dispararia o timeout pretendido nunca chega a rodar por tempo suficiente antes de ser rejeitado em milissegundos. Verificado em seis variações de payload ajustadas independentemente; o solver permanece registrado e é tentado normalmente, sendo reportado honestamente como não resolvido em vez de removido. |
 
-This project was built phase-by-phase, each with a written implementation
-plan reviewed against the real Juice Shop source before a line of solver code
-was written:
+<sub>O solver de <code>xxeDosChallenge</code> permanece em <code>solvers/xxe.py</code> de propósito — uma tentativa genuína e documentada que falha é mais útil do que fingir que o desafio não existe.</sub>
 
-- [`docs/superpowers/specs/2026-08-09-juice-shop-automator-design.md`](docs/superpowers/specs/2026-08-09-juice-shop-automator-design.md) — original scope and architecture
-- [`docs/superpowers/plans/`](docs/superpowers/plans/) — five phase plans, one per delivery, each listing the exact source files consulted and the reasoning behind every non-obvious payload
+<br>
 
-## Responsible use
+## 📚 Documentação de design
 
-This project targets **OWASP Juice Shop**, an application built and
-maintained by OWASP specifically to be attacked for security training. Running
-these solvers against your own local Juice Shop instance is exactly what the
-project exists for.
+Este projeto foi construído fase a fase, cada uma com um plano de implementação escrito e revisado contra o código-fonte real do Juice Shop antes de qualquer linha de solver ser escrita:
 
-**Do not point `--base-url` at any instance you don't own or don't have
-explicit authorization to test.** Nothing in this repository is intended for,
-or should be used against, a third party's infrastructure.
+- [`docs/superpowers/specs/`](docs/superpowers/specs/2026-08-09-juice-shop-automator-design.md) — escopo e arquitetura originais
+- [`docs/superpowers/plans/`](docs/superpowers/plans/) — cinco planos de fase, um por entrega, cada um listando os arquivos-fonte exatos consultados e o raciocínio por trás de cada payload não óbvio
+
+<br>
+
+## ⚖️ Uso responsável
+
+> [!WARNING]
+> Este projeto tem como alvo o **OWASP Juice Shop**, uma aplicação construída e mantida pela própria OWASP especificamente para ser atacada em treinamentos de segurança. Rodar estes solvers contra sua própria instância local do Juice Shop é exatamente para isso que o projeto existe.
+>
+> **Não aponte `--base-url` para nenhuma instância que você não possua ou não tenha autorização explícita para testar.** Nada neste repositório é destinado a, ou deve ser usado contra, infraestrutura de terceiros.
+
+<br>
+
+<div align="center">
+<sub>Construído com verificação ao vivo, sem mocking, contra o código-fonte real do Juice Shop.</sub>
+</div>
