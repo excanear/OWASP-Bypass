@@ -31,6 +31,22 @@ try:
     import solvers.vulnerable_components  # noqa: F401
 except ImportError:
     pass
+try:
+    import solvers.cryptographic_issues  # noqa: F401
+except ImportError:
+    pass
+try:
+    import solvers.security_misconfiguration  # noqa: F401
+except ImportError:
+    pass
+try:
+    import solvers.observability_failures  # noqa: F401
+except ImportError:
+    pass
+try:
+    import solvers.miscellaneous  # noqa: F401
+except ImportError:
+    pass
 
 from core.runner import run_all
 from report import print_report
