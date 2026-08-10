@@ -15,6 +15,7 @@ def solve_redirect_cryptocurrency(ctx: SolverContext) -> None:
     ctx.client.get(
         "/redirect",
         params={"to": "https://blockchain.info/address/1AbKfgvw9psQ41NbLi8kufDQTezwG8DRZm"},
+        allow_redirects=False,
     ).raise_for_status()
 
 
@@ -32,4 +33,5 @@ def solve_redirect_bypass(ctx: SolverContext) -> None:
     ctx.client.get(
         "/redirect",
         params={"to": "https://evil.attacker.test/?x=https://github.com/juice-shop/juice-shop"},
+        allow_redirects=False,
     ).raise_for_status()
