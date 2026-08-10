@@ -47,6 +47,26 @@ try:
     import solvers.miscellaneous  # noqa: F401
 except ImportError:
     pass
+try:
+    import solvers.broken_anti_automation  # noqa: F401
+except ImportError:
+    pass
+try:
+    import solvers.security_through_obscurity  # noqa: F401
+except ImportError:
+    pass
+try:
+    import solvers.unvalidated_redirects  # noqa: F401
+except ImportError:
+    pass
+try:
+    import solvers.insecure_deserialization  # noqa: F401
+except ImportError:
+    pass
+try:
+    import solvers.xxe  # noqa: F401
+except ImportError:
+    pass
 
 from core.runner import run_all
 from report import print_report
