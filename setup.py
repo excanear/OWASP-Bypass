@@ -10,11 +10,22 @@ import requests
 JUICE_SHOP_REPO = "https://github.com/juice-shop/juice-shop.git"
 
 
+def _npm_path() -> str:
+    # On Windows, "npm" resolves to npm.cmd, which subprocess can only
+    # execute via CreateProcess if given its full, resolved path (a bare
+    # "npm" string raises FileNotFoundError there, even though shutil.which
+    # finds it fine) — shutil.which() returns that resolved path on every
+    # platform, so use it instead of the bare command name.
+    npm = shutil.which("npm")
+    if npm is None:
+        raise RuntimeError("npm not found on PATH.")
+    return npm
+
+
 def ensure_node() -> None:
     if shutil.which("node") is None:
         raise RuntimeError("Node.js not found on PATH. Install Node.js >= 18 first.")
-    if shutil.which("npm") is None:
-        raise RuntimeError("npm not found on PATH.")
+    _npm_path()
 
 
 def clone_if_missing(target_dir: str) -> None:
@@ -24,13 +35,13 @@ def clone_if_missing(target_dir: str) -> None:
 
 def npm_install(target_dir: str) -> None:
     if not os.path.isdir(os.path.join(target_dir, "node_modules")):
-        subprocess.run(["npm", "install"], cwd=target_dir, check=True)
+        subprocess.run([_npm_path(), "install"], cwd=target_dir, check=True)
 
 
 def start_server(target_dir: str) -> subprocess.Popen:
     env = os.environ.copy()
     env["NODE_CONFIG"] = '{"challenges":{"safetyMode":"disabled"}}'
-    return subprocess.Popen(["npm", "start"], cwd=target_dir, env=env)
+    return subprocess.Popen([_npm_path(), "start"], cwd=target_dir, env=env)
 
 
 def wait_ready(base_url: str = "http://localhost:3000", timeout: float = 180.0) -> None:
