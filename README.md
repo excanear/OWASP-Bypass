@@ -10,6 +10,7 @@
 [![Node.js](https://img.shields.io/badge/node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Juice Shop](https://img.shields.io/badge/juice--shop-20.1.1-FF6B00?style=for-the-badge&logo=owasp&logoColor=white)](https://github.com/juice-shop/juice-shop)
 [![Resultado](https://img.shields.io/badge/desafios-106%2F107-brightgreen?style=for-the-badge)](#-resultados)
+[![Documentação](https://img.shields.io/badge/📘_documentação-técnica_completa-6E56CF?style=for-the-badge)](docs/documentacao/README.md)
 
 <br>
 
@@ -366,6 +367,9 @@ Alguns solvers que vão bem além de um payload de uma linha:
 <br>
 
 ## 📚 Documentação de design
+
+> [!IMPORTANT]
+> **Documentação técnica completa:** este README é a introdução rápida. Para arquitetura em profundidade, referência de API, o catálogo técnico detalhado dos 107 exploits, guia de extensão e o registro de decisões de design, veja a **[📘 Documentação Técnica Oficial](docs/documentacao/README.md)**.
 
 Este projeto foi construído fase a fase, cada uma com um plano de implementação escrito e revisado contra o código-fonte real do Juice Shop antes de qualquer linha de solver ser escrita:
 
